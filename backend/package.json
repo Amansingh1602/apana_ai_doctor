@@ -4,6 +4,9 @@
   "description": "MERN Stack backend for Apna Doctor - AI Symptom Checker",
   "main": "index.js",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js"
