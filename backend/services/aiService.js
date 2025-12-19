@@ -1,6 +1,7 @@
 // AI Service for symptom analysis using Grok API
 
-const GROK_API_KEY = process.env.GROK_API_KEY;
+// Get API key dynamically to ensure dotenv has loaded
+const getGrokApiKey = () => process.env.GROK_API_KEY;
 
 function buildPrompt(symptoms) {
   return `You are a medical triage assistant for an educational demonstration tool. Analyze the following symptoms and provide structured health guidance.
@@ -84,12 +85,15 @@ async function analyzeWithGrok(symptoms) {
   try {
     console.log('🤖 Calling Grok API for symptom analysis...');
     const prompt = buildPrompt(symptoms);
+    const apiKey = getGrokApiKey();
+    
+    console.log('🔑 API Key loaded:', apiKey ? 'Yes (length: ' + apiKey.length + ')' : 'NO - MISSING!');
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROK_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
