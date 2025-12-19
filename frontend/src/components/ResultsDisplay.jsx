@@ -166,7 +166,7 @@ const ResultsDisplay = ({ result, onNewAnalysis }) => {
           </CardHeader>
           <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
             <div className="grid gap-2 sm:gap-3 md:grid-cols-2">
-                            {result.recommendations.medicines.map((medicine, index) => (
+              {result.recommendations.medicines.map((medicine, index) => (
                 <div
                   key={index}
                   className="rounded-lg border border-slate-700 bg-slate-800/50 p-3 sm:p-4"
