@@ -25,9 +25,10 @@ router.get('/generate/:sessionId', authMiddleware, async (req, res) => {
     // Create a document
     const doc = new PDFDocument({ margin: 50 });
 
-    // Set response headers
+    // Set response headers for PDF download
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=Health_Report_${sessionId}.pdf`);
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
 
     // Pipe the PDF into the response
     doc.pipe(res);

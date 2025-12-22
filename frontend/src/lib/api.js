@@ -268,10 +268,18 @@ export const reportsApi = {
   downloadStream: async (sessionId) => {
     const token = getToken();
     const response = await fetch(`${API_URL}/reports/generate/${sessionId}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+      method: 'GET',
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/pdf'
+      },
+      credentials: 'include'
     });
     
-    if (!response.ok) throw new Error("Failed to download report");
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Failed to download report");
+    }
     
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
@@ -280,7 +288,8 @@ export const reportsApi = {
     a.download = `Health_Report_${sessionId}.pdf`;
     document.body.appendChild(a);
     a.click();
-    a.remove();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
   }
 };
 
