@@ -9,7 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { toast } from "sonner";
 import { AlertCircle, Baby, HeartPulse, Loader2, ShieldCheck, EyeOff, Stethoscope, Sparkles, User, Users } from "lucide-react";
 import { cn } from "../lib/utils";
+import { useTheme } from "../hooks/useTheme.jsx";
 import ResultsDisplay from "./ResultsDisplay";
+import VoiceInput from "./VoiceInput";
 
 const genderOptions = [
   { id: "male", label: "Male", icon: User },
@@ -33,6 +35,7 @@ const severityLevels = [
 ];
 
 const SymptomForm = () => {
+  const { isDark } = useTheme();
   const [loading, setLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [gender, setGender] = useState("");
@@ -49,6 +52,8 @@ const SymptomForm = () => {
     age: "",
     gender: "",
     isPregnant: false,
+    activityLevel: "",
+    stressLevel: "",
   });
 
   const handleInputChange = (field, value) => {
@@ -131,6 +136,8 @@ const SymptomForm = () => {
       age: "",
       gender: "",
       isPregnant: false,
+      activityLevel: "",
+      stressLevel: "",
     });
     setGender("");
     setPregnancyStatus("not");
@@ -142,15 +149,15 @@ const SymptomForm = () => {
 
   return (
     <div className="max-w-3xl mx-auto px-2 sm:px-0">
-      <Card className="border-slate-800 bg-slate-900/80 backdrop-blur-xl">
+      <Card className={`${isDark ? 'border-slate-800 bg-slate-900/80' : 'border-slate-200 bg-white/90'} backdrop-blur-xl`}>
         <CardHeader className="px-4 sm:px-6">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg sm:rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
               <Stethoscope className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
             <div>
-              <CardTitle className="text-lg sm:text-xl text-white">Symptom Analysis</CardTitle>
-              <CardDescription className="text-xs sm:text-sm text-slate-400">
+              <CardTitle className={`text-lg sm:text-xl ${isDark ? 'text-white' : 'text-slate-900'}`}>Symptom Analysis</CardTitle>
+              <CardDescription className={`text-xs sm:text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                 Describe your symptoms for AI-powered health guidance
               </CardDescription>
             </div>
@@ -161,24 +168,30 @@ const SymptomForm = () => {
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {/* Main Symptoms */}
             <div className="space-y-2">
-              <Label className="text-slate-300">
-                Describe Your Symptoms <span className="text-red-400">*</span>
-              </Label>
+              <div className="flex justify-between items-center">
+                  <Label className={isDark ? 'text-slate-300' : 'text-slate-700'}>
+                    Describe Your Symptoms <span className="text-red-400">*</span>
+                  </Label>
+                  <VoiceInput 
+                    isDark={isDark} 
+                    onTranscript={(text) => handleInputChange("symptomsText", formData.symptomsText + (formData.symptomsText ? " " : "") + text)} 
+                  />
+              </div>
               <Textarea
                 placeholder="E.g., I have been experiencing headache for 2 days, along with mild fever and body ache..."
                 value={formData.symptomsText}
                 onChange={(e) => handleInputChange("symptomsText", e.target.value)}
-                className="min-h-[120px] bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500"
+                className={`min-h-[120px] ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder:text-slate-500' : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400'} focus:border-blue-500`}
                 required
               />
-              <p className="text-xs text-slate-500">
+              <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
                 {formData.symptomsText.length}/10 characters minimum
               </p>
             </div>
 
             {/* Severity Selection */}
             <div className="space-y-2">
-              <Label className="text-slate-300 text-sm sm:text-base">
+              <Label className={`${isDark ? 'text-slate-300' : 'text-slate-700'} text-sm sm:text-base`}>
                 Severity Level <span className="text-red-400">*</span>
               </Label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -191,7 +204,7 @@ const SymptomForm = () => {
                       "rounded-lg border p-2 sm:p-3 text-center transition-all text-sm sm:text-base",
                       formData.severity === value
                         ? `${bg} ${color}`
-                        : "border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600"
+                        : isDark ? "border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600" : "border-slate-300 bg-slate-50 text-slate-600 hover:border-slate-400"
                     )}
                   >
                     {label}
@@ -202,7 +215,7 @@ const SymptomForm = () => {
 
             {/* Age */}
             <div className="space-y-2">
-              <Label className="text-slate-300">
+              <Label className={isDark ? 'text-slate-300' : 'text-slate-700'}>
                 Age <span className="text-red-400">*</span>
               </Label>
               <Input
@@ -212,14 +225,14 @@ const SymptomForm = () => {
                 onChange={(e) => handleInputChange("age", e.target.value)}
                 min="1"
                 max="120"
-                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500"
+                className={`${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder:text-slate-500' : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400'} focus:border-blue-500`}
                 required
               />
             </div>
 
             {/* Gender Selection */}
             <div className="space-y-2">
-              <Label className="text-slate-300 text-sm sm:text-base">
+              <Label className={`${isDark ? 'text-slate-300' : 'text-slate-700'} text-sm sm:text-base`}>
                 Gender <span className="text-red-400">*</span>
               </Label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -232,7 +245,7 @@ const SymptomForm = () => {
                       "flex flex-col items-center gap-1.5 sm:gap-2 rounded-lg border p-2 sm:p-3 transition-all",
                       gender === id
                         ? "border-blue-500/50 bg-blue-500/10 text-blue-400"
-                        : "border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600"
+                        : isDark ? "border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600" : "border-slate-300 bg-slate-50 text-slate-600 hover:border-slate-400"
                     )}
                   >
                     <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -245,7 +258,7 @@ const SymptomForm = () => {
             {/* Pregnancy Status - Only shown for females */}
             {gender === "female" && (
               <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                <Label className="text-slate-300 flex items-center gap-2 text-sm sm:text-base">
+                <Label className={`${isDark ? 'text-slate-300' : 'text-slate-700'} flex items-center gap-2 text-sm sm:text-base`}>
                   <Baby className="h-4 w-4 text-pink-400" />
                   Pregnancy Status
                 </Label>
@@ -259,7 +272,7 @@ const SymptomForm = () => {
                         "flex flex-col items-center gap-1.5 sm:gap-2 rounded-lg border p-2 sm:p-3 transition-all",
                         pregnancyStatus === id
                           ? "border-pink-500/50 bg-pink-500/10 text-pink-400"
-                          : "border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600"
+                          : isDark ? "border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600" : "border-slate-300 bg-slate-50 text-slate-600 hover:border-slate-400"
                       )}
                     >
                       <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -273,15 +286,15 @@ const SymptomForm = () => {
             {/* Duration and Onset */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div className="space-y-2">
-                <Label className="text-slate-300 text-sm sm:text-base">When did it start?</Label>
+                <Label className={`${isDark ? 'text-slate-300' : 'text-slate-700'} text-sm sm:text-base`}>When did it start?</Label>
                 <Select 
                   value={formData.onset} 
                   onValueChange={(value) => handleInputChange("onset", value)}
                 >
-                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                  <SelectTrigger className={isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-900'}>
                     <SelectValue placeholder="Select onset" />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-700">
+                  <SelectContent className={isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}>
                     <SelectItem value="today">Today</SelectItem>
                     <SelectItem value="yesterday">Yesterday</SelectItem>
                     <SelectItem value="few-days">Few days ago</SelectItem>
@@ -293,15 +306,15 @@ const SymptomForm = () => {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-300">Duration</Label>
+                <Label className={isDark ? 'text-slate-300' : 'text-slate-700'}>Duration</Label>
                 <Select 
                   value={formData.duration} 
                   onValueChange={(value) => handleInputChange("duration", value)}
                 >
-                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                  <SelectTrigger className={isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-900'}>
                     <SelectValue placeholder="Select duration" />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-700">
+                  <SelectContent className={isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}>
                     <SelectItem value="hours">Few hours</SelectItem>
                     <SelectItem value="day">About a day</SelectItem>
                     <SelectItem value="days">Few days</SelectItem>
@@ -313,40 +326,77 @@ const SymptomForm = () => {
               </div>
             </div>
 
+            {/* Activity Level */}
+            <div className="space-y-2">
+              <Label className={`${isDark ? 'text-slate-300' : 'text-slate-700'} text-sm sm:text-base`}>
+                Physical Activity Level
+              </Label>
+              <Select value={formData.activityLevel} onValueChange={(value) => handleInputChange("activityLevel", value)}>
+                <SelectTrigger className={isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-900'}>
+                  <SelectValue placeholder="Select activity level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sedentary">Sedentary (Little to no exercise)</SelectItem>
+                  <SelectItem value="light">Light (Exercise 1-2 days/week)</SelectItem>
+                  <SelectItem value="moderate">Moderate (Exercise 3-5 days/week)</SelectItem>
+                  <SelectItem value="active">Active (Exercise 6-7 days/week)</SelectItem>
+                  <SelectItem value="very-active">Very Active (Physical job + exercise)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Stress Level */}
+            <div className="space-y-2">
+              <Label className={`${isDark ? 'text-slate-300' : 'text-slate-700'} text-sm sm:text-base`}>
+                Current Stress Level
+              </Label>
+              <Select value={formData.stressLevel} onValueChange={(value) => handleInputChange("stressLevel", value)}>
+                <SelectTrigger className={isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-900'}>
+                  <SelectValue placeholder="Select stress level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low (Relaxed, minimal stress)</SelectItem>
+                  <SelectItem value="moderate">Moderate (Manageable stress)</SelectItem>
+                  <SelectItem value="high">High (Significant stress/pressure)</SelectItem>
+                  <SelectItem value="severe">Severe (Overwhelming stress)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Medical History */}
-            <div className="space-y-3 sm:space-y-4 rounded-lg sm:rounded-xl border border-slate-700 bg-slate-800/30 p-3 sm:p-4">
-              <h4 className="font-medium text-white flex items-center gap-2 text-sm sm:text-base">
+            <div className={`space-y-3 sm:space-y-4 rounded-lg sm:rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/30' : 'border-slate-200 bg-slate-50'} p-3 sm:p-4`}>
+              <h4 className={`font-medium ${isDark ? 'text-white' : 'text-slate-900'} flex items-center gap-2 text-sm sm:text-base`}>
                 <AlertCircle className="h-4 w-4 text-blue-400" />
                 Medical History (Optional)
               </h4>
 
               <div className="space-y-2">
-                <Label className="text-slate-300 text-sm">Existing Conditions</Label>
+                <Label className={`${isDark ? 'text-slate-300' : 'text-slate-700'} text-sm`}>Existing Conditions</Label>
                 <Input
                   placeholder="E.g., Diabetes, Hypertension, Asthma..."
                   value={formData.existingConditions}
                   onChange={(e) => handleInputChange("existingConditions", e.target.value)}
-                  className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+                  className={isDark ? 'bg-slate-800 border-slate-700 text-white placeholder:text-slate-500' : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400'}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-300">Current Medications</Label>
+                <Label className={isDark ? 'text-slate-300' : 'text-slate-700'}>Current Medications</Label>
                 <Input
                   placeholder="E.g., Metformin 500mg, Amlodipine 5mg..."
                   value={formData.currentMedications}
                   onChange={(e) => handleInputChange("currentMedications", e.target.value)}
-                  className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+                  className={isDark ? 'bg-slate-800 border-slate-700 text-white placeholder:text-slate-500' : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400'}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-300">Allergies</Label>
+                <Label className={isDark ? 'text-slate-300' : 'text-slate-700'}>Allergies</Label>
                 <Input
                   placeholder="E.g., Penicillin, Sulfa drugs, Peanuts..."
                   value={formData.allergies}
                   onChange={(e) => handleInputChange("allergies", e.target.value)}
-                  className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+                  className={isDark ? 'bg-slate-800 border-slate-700 text-white placeholder:text-slate-500' : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400'}
                 />
               </div>
             </div>

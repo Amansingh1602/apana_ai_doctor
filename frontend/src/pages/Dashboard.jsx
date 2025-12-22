@@ -1,15 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { authApi, consentApi } from "../lib/api";
+import { authApi, consentApi, notificationApi } from "../lib/api";
 import { Button } from "../components/ui/button";
 import { ThemeToggle } from "../components/ui/theme-toggle";
 import { useTheme } from "../hooks/useTheme.jsx";
-import { Activity, FileText, Heart, LogOut, User } from "lucide-react";
+import { Activity, FileText, Heart, LogOut, User, Bell, Check, X, Trash2, TrendingUp, MapPin, FlaskConical } from "lucide-react";
 import { toast } from "sonner";
 import ConsentForm from "../components/ConsentForm";
 import SymptomForm from "../components/SymptomForm";
 import SessionHistory from "../components/SessionHistory";
+import AccountView from "../components/AccountView";
+import AnalyticsView from "../components/AnalyticsView";
+import ReportView from "../components/ReportView";
+import DoctorFinder from "../components/DoctorFinder";
+import LabReportAnalyzer from "../components/LabReportAnalyzer";
+import ChatWidget from "../components/ChatWidget";
 import { cn } from "../lib/utils";
+import { format } from 'date-fns';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -17,10 +24,20 @@ const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [hasConsent, setHasConsent] = useState(null);
   const [activeTab, setActiveTab] = useState("new");
+  
+  // Notification States
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const notificationRef = useRef(null);
 
   const tabs = [
     { id: "new", label: "Symptom Check", description: "New Assessment", Icon: Activity },
     { id: "history", label: "History", description: "Past Sessions", Icon: FileText },
+    { id: "analytics", label: "Analytics", description: "Health Trends", Icon: TrendingUp },
+    { id: "reports", label: "Reports", description: "Download PDFs", Icon: FileText },
+    { id: "lab-analyzer", label: "Lab Analysis", description: "Analyze Reports", Icon: FlaskConical },
+    { id: "doctors", label: "Doctors", description: "Find Specialists", Icon: MapPin },
   ];
 
   useEffect(() => {
@@ -43,13 +60,81 @@ const Dashboard = () => {
     };
 
     fetchUser();
+    
+    // Fetch notifications
+    loadNotifications();
+    // Poll for notifications every 60s
+    const interval = setInterval(loadNotifications, 60000);
+    return () => clearInterval(interval);
+
   }, [navigate]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (user) {
       checkConsent();
     }
   }, [user]);
+
+  const loadNotifications = async () => {
+    if (!authApi.isAuthenticated()) return;
+    try {
+      const data = await notificationApi.getAll();
+      setNotifications(data);
+      setUnreadCount(data.filter(n => !n.read).length);
+    } catch (error) {
+       console.error("Error loading notifications");
+    }
+  };
+
+  const markAsRead = async (id) => {
+    try {
+      await notificationApi.markRead(id);
+      loadNotifications();
+    } catch (error) {
+      console.error("Error marking read");
+    }
+  };
+
+  const markAllRead = async () => {
+    try {
+      await notificationApi.markAllRead();
+      loadNotifications();
+      toast.success("All notifications marked as read");
+    } catch (error) {
+      toast.error("Failed to mark all as read");
+    }
+  };
+
+  const deleteNotification = async (id) => {
+    try {
+      await notificationApi.delete(id);
+      toast.success('Notification deleted');
+      loadNotifications();
+    } catch (error) {
+      toast.error('Error deleting notification');
+    }
+  };
+
+  const deleteAllNotifications = async () => {
+    try {
+      await notificationApi.deleteAll();
+      toast.success('All notifications deleted');
+      loadNotifications();
+    } catch (error) {
+      toast.error('Error deleting notifications');
+    }
+  };
 
   const checkConsent = async () => {
     try {
@@ -103,7 +188,13 @@ const Dashboard = () => {
         <div className="mx-auto max-w-6xl px-4 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <div className="flex items-center gap-3">
+            <div 
+              className="flex items-center gap-3 cursor-pointer transition-transform hover:scale-105" 
+              onClick={() => navigate('/')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && navigate('/')}
+            >
               <div className="relative">
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 blur-lg opacity-50" />
                 <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
@@ -118,13 +209,106 @@ const Dashboard = () => {
 
             {/* User Actions */}
             <div className="flex items-center gap-3">
+              
+              {/* Notification Bell */}
+              <div className="relative" ref={notificationRef}>
+                 <button 
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className={`relative p-2 rounded-full transition-colors ${showNotifications ? (isDark ? 'bg-slate-800' : 'bg-slate-200') : 'hover:bg-slate-800/50'}`}
+                 >
+                   <Bell className={`h-5 w-5 ${isDark ? 'text-slate-300' : 'text-slate-600'}`} />
+                   {unreadCount > 0 && (
+                     <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center">
+                       {unreadCount > 9 ? '9+' : unreadCount}
+                     </span>
+                   )}
+                 </button>
+
+                 {/* Notification Dropdown */}
+                 {showNotifications && (
+                   <div className={`absolute right-0 mt-2 w-80 sm:w-96 rounded-xl border shadow-xl z-50 overflow-hidden ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+                     <div className={`p-4 border-b flex justify-between items-center ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                       <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Notifications</h3>
+                       <div className="flex items-center gap-2">
+                         {unreadCount > 0 && (
+                           <button onClick={markAllRead} className="text-xs text-blue-500 hover:text-blue-600 font-medium">
+                             Mark all read
+                           </button>
+                         )}
+                         {notifications.length > 0 && (
+                           <button 
+                             onClick={deleteAllNotifications} 
+                             className="text-xs text-red-500 hover:text-red-600 font-medium flex items-center gap-1"
+                             title="Delete all notifications"
+                           >
+                             <Trash2 className="h-3 w-3" />
+                             Clear all
+                           </button>
+                         )}
+                       </div>
+                     </div>
+                     <div className="max-h-[400px] overflow-y-auto">
+                       {notifications.length > 0 ? (
+                         notifications.map(notif => (
+                           <div 
+                             key={notif._id} 
+                             className={`p-4 border-b last:border-0 hover:bg-opacity-50 transition-colors ${
+                               notif.read 
+                                 ? (isDark ? 'bg-transparent border-slate-800' : 'bg-white border-slate-100') 
+                                 : (isDark ? 'bg-blue-500/10 border-slate-800' : 'bg-blue-50 border-slate-100')
+                             }`}
+                           >
+                              <div className="flex items-start gap-3">
+                                <div className={`mt-1 h-2 w-2 rounded-full flex-shrink-0 ${notif.read ? 'bg-transparent' : 'bg-blue-500'}`} />
+                                <div className="flex-1 space-y-1">
+                                  <div className="flex justify-between items-start gap-2">
+                                    <p className={`text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{notif.title}</p>
+                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                      {!notif.read && (
+                                        <button 
+                                          onClick={() => markAsRead(notif._id)} 
+                                          title="Mark as read"
+                                          className="hover:bg-slate-700 rounded p-0.5"
+                                        >
+                                          <Check className="h-3.5 w-3.5 text-slate-400 hover:text-blue-500" />
+                                        </button>
+                                      )}
+                                      <button 
+                                        onClick={() => deleteNotification(notif._id)} 
+                                        title="Delete notification"
+                                        className="hover:bg-slate-700 rounded p-0.5"
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5 text-slate-400 hover:text-red-500" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{notif.message}</p>
+                                  <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{format(new Date(notif.createdAt), 'MMM d, h:mm a')}</p>
+                                </div>
+                              </div>
+                           </div>
+                         ))
+                       ) : (
+                         <div className="p-8 text-center">
+                           <Bell className={`h-8 w-8 mx-auto mb-2 opacity-20 ${isDark ? 'text-white' : 'text-black'}`} />
+                           <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>No notifications yet</p>
+                         </div>
+                       )}
+                     </div>
+                   </div>
+                 )}
+              </div>
+
               {/* User Badge */}
-              <div className={`hidden sm:flex items-center gap-2 rounded-full border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-white/80'} px-4 py-2`}>
+              <button 
+                onClick={() => setActiveTab("account")}
+                className={`hidden sm:flex items-center gap-2 rounded-full border transition-colors ${isDark ? 'border-slate-700 bg-slate-800/50 hover:bg-slate-800' : 'border-slate-200 bg-white/80 hover:bg-white'} px-4 py-2`}
+              >
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 text-xs font-bold text-white">
                   {userInitials}
                 </div>
                 <span className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{user.fullName}</span>
-              </div>
+              </button>
 
               {/* Theme Toggle */}
               <ThemeToggle />
@@ -144,7 +328,7 @@ const Dashboard = () => {
 
           {/* Tabs */}
           {hasConsent && (
-            <div className="mt-3 sm:mt-4 flex gap-2">
+            <div className="mt-3 sm:mt-4 flex gap-2 overflow-x-auto pb-2 sm:pb-0 no-scrollbar">
               {tabs.map(({ id, label, description, Icon }) => {
                 const active = activeTab === id;
                 return (
@@ -153,7 +337,7 @@ const Dashboard = () => {
                     type="button"
                     onClick={() => setActiveTab(id)}
                     className={cn(
-                      "flex flex-1 items-center gap-2 sm:gap-3 rounded-lg sm:rounded-xl border p-2.5 sm:p-4 transition-all",
+                      "flex flex-1 items-center gap-2 sm:gap-3 rounded-lg sm:rounded-xl border p-2.5 sm:p-4 transition-all min-w-[140px] sm:min-w-0",
                       active
                         ? "border-blue-500/50 bg-blue-500/10 shadow-lg shadow-blue-500/10"
                         : isDark 
@@ -191,10 +375,23 @@ const Dashboard = () => {
           <ConsentForm onConsentGiven={handleConsentGiven} />
         ) : activeTab === "new" ? (
           <SymptomForm />
-        ) : (
+        ) : activeTab === "history" ? (
           <SessionHistory />
+        ) : activeTab === "analytics" ? (
+          <AnalyticsView />
+        ) : activeTab === "reports" ? (
+          <ReportView />
+        ) : activeTab === "lab-analyzer" ? (
+          <LabReportAnalyzer />
+        ) : activeTab === "doctors" ? (
+          <DoctorFinder />
+        ) : (
+          <AccountView user={user} />
         )}
       </main>
+
+      {/* Persistent AI Chatbot */}
+      <ChatWidget />
     </div>
   );
 };

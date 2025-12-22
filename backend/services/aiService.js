@@ -228,3 +228,174 @@ export async function analyzeSymptoms(symptoms) {
     return getFallbackResponse(symptoms);
   }
 }
+
+// Analyze medical report image using Grok Vision API
+export async function analyzeImage(imageBase64, mimeType = 'image/jpeg') {
+  try {
+    console.log('🔬 Analyzing medical report image with Grok Vision...');
+    const apiKey = getGrokApiKey();
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'llama-3.2-90b-vision-preview',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `You are a medical report analyzer. Analyze this medical report/lab test image and provide:
+
+1. **Report Type**: What type of medical report is this? (Blood test, X-ray, MRI, etc.)
+2. **Key Findings**: List all important findings from the report
+3. **Abnormal Values**: Identify any values that are outside normal ranges
+4. **Summary**: A brief summary of the overall health indicators
+5. **Recommendations**: Any recommended follow-up actions or lifestyle changes
+6. **Urgency Level**: Rate the urgency (normal/attention-needed/urgent)
+
+Format your response as valid JSON with these exact keys:
+{
+  "reportType": "string",
+  "keyFindings": ["finding1", "finding2"],
+  "abnormalValues": [{"parameter": "name", "value": "value", "normalRange": "range", "status": "high/low"}],
+  "summary": "string",
+  "recommendations": ["rec1", "rec2"],
+  "urgencyLevel": "normal/attention-needed/urgent",
+  "disclaimer": "This is an AI analysis and should not replace professional medical advice."
+}
+
+Respond ONLY with valid JSON, no markdown.`
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:${mimeType};base64,${imageBase64}`
+                }
+              }
+            ]
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 2048,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Grok Vision API error:', errorData);
+      throw new Error(`Grok Vision API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content;
+
+    if (!text) {
+      throw new Error('Empty response from Grok Vision');
+    }
+
+    const parsed = parseAIResponse(text);
+    if (parsed) {
+      console.log('✅ Successfully analyzed medical report');
+      return parsed;
+    }
+
+    throw new Error('Failed to parse Grok Vision response');
+  } catch (error) {
+    console.error('❌ Image analysis error:', error.message);
+    return {
+      reportType: 'Unknown',
+      keyFindings: ['Unable to analyze the report automatically'],
+      abnormalValues: [],
+      summary: 'The AI was unable to analyze this report. Please consult with a healthcare professional.',
+      recommendations: ['Consult with your doctor for proper interpretation'],
+      urgencyLevel: 'attention-needed',
+      disclaimer: 'AI analysis failed. Please have a medical professional review this report.'
+    };
+  }
+}
+
+// Chat with AI for health-related queries
+export async function chatWithAI(message, conversationHistory = []) {
+  try {
+    console.log('💬 Processing chat message with Grok...');
+    const apiKey = getGrokApiKey();
+
+    const messages = [
+      {
+        role: 'system',
+        content: `You are a helpful, empathetic health assistant named "Apna Doctor AI". You provide general health information and guidance.
+
+IMPORTANT GUIDELINES:
+1. Always be caring and supportive in your responses
+2. For serious symptoms, recommend seeking professional medical care
+3. Never diagnose conditions - only provide general health information
+4. If asked about medications, only mention OTC options and always recommend consulting a doctor
+5. Be concise but thorough in your responses
+6. Always include a gentle reminder that you're an AI and not a replacement for professional medical advice
+7. If the user seems distressed, provide emotional support first
+
+You can help with:
+- General health questions
+- Understanding symptoms
+- Lifestyle and wellness tips
+- Diet and nutrition guidance
+- Exercise recommendations
+- Mental health support
+- Explaining medical terms
+- Preparing questions for doctor visits`
+      },
+      ...conversationHistory.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      })),
+      {
+        role: 'user',
+        content: message
+      }
+    ];
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 1024,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Grok Chat API error:', errorData);
+      throw new Error(`Grok Chat API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content;
+
+    if (!text) {
+      throw new Error('Empty response from Grok Chat');
+    }
+
+    console.log('✅ Chat response generated');
+    return {
+      success: true,
+      response: text
+    };
+  } catch (error) {
+    console.error('❌ Chat error:', error.message);
+    return {
+      success: false,
+      response: "I'm sorry, I'm having trouble processing your message right now. Please try again in a moment, or if you have an urgent health concern, please contact a healthcare provider directly."
+    };
+  }
+}

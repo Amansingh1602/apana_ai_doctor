@@ -24,12 +24,50 @@ const userSchema = new mongoose.Schema({
   profile: {
     age: { type: Number, min: 1, max: 120 },
     gender: { type: String, enum: ['male', 'female', 'other', ''] },
-    location: { type: String, trim: true }
+    location: { type: String, trim: true },
+    height: { type: Number, min: 0 },
+    weight: { type: Number, min: 0 },
+    bloodType: { type: String, enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', ''] },
+    healthGoals: [{ type: String }]
+  },
+  phoneNumber: {
+    type: String,
+    trim: true
+  },
+  fcmToken: {
+    type: String,
+    default: null
+  },
+  emailNotifications: {
+    type: Boolean,
+    default: true
+  },
+  smsNotifications: {
+    type: Boolean,
+    default: false
+  },
+  pushNotifications: {
+    type: Boolean,
+    default: true
   },
   isAdmin: {
     type: Boolean,
     default: false
   },
+  lastLogin: {
+    type: Date,
+    default: null
+  },
+  passwordChangedAt: {
+    type: Date,
+    default: null
+  },
+  loginHistory: [{
+    timestamp: { type: Date, default: Date.now },
+    ipAddress: { type: String },
+    userAgent: { type: String },
+    success: { type: Boolean, default: true }
+  }],
   createdAt: {
     type: Date,
     default: Date.now

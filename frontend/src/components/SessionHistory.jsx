@@ -14,6 +14,7 @@ import {
   Calendar
 } from "lucide-react";
 import { cn } from "../lib/utils";
+import { useTheme } from "../hooks/useTheme.jsx";
 
 const triageColors = {
   emergency: { color: "text-red-500", bg: "bg-red-500/10", border: "border-red-500/30" },
@@ -23,6 +24,7 @@ const triageColors = {
 };
 
 const SessionHistory = () => {
+  const { isDark } = useTheme();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSession, setSelectedSession] = useState(null);
@@ -82,13 +84,13 @@ const SessionHistory = () => {
 
   if (sessions.length === 0) {
     return (
-      <Card className="border-slate-800 bg-slate-900/80">
+      <Card className={isDark ? 'border-slate-800 bg-slate-900/80' : 'border-slate-200 bg-white/90'}>
         <CardContent className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-800 mb-4">
-            <FileText className="h-8 w-8 text-slate-500" />
+          <div className={`flex h-16 w-16 items-center justify-center rounded-2xl ${isDark ? 'bg-slate-800' : 'bg-slate-100'} mb-4`}>
+            <FileText className={isDark ? 'h-8 w-8 text-slate-500' : 'h-8 w-8 text-slate-400'} />
           </div>
-          <h3 className="text-xl font-semibold text-white">No History Yet</h3>
-          <p className="text-slate-400 mt-2 max-w-md">
+          <h3 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>No History Yet</h3>
+          <p className={`${isDark ? 'text-slate-400' : 'text-slate-600'} mt-2 max-w-md`}>
             Your symptom analysis history will appear here. Start a new symptom check to get AI-powered health guidance.
           </p>
         </CardContent>
@@ -100,7 +102,7 @@ const SessionHistory = () => {
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Session List */}
       <div className="space-y-3">
-        <h3 className="text-lg font-semibold text-white mb-4">Past Sessions</h3>
+        <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-900'} mb-4`}>Past Sessions</h3>
         {sessions.map((session) => {
           const triage = triageColors[session.analysisResult?.triageLevel] || triageColors["see-doctor"];
           const isSelected = selectedSession?._id === session._id;
@@ -110,7 +112,8 @@ const SessionHistory = () => {
               key={session._id}
               onClick={() => setSelectedSession(session)}
               className={cn(
-                "cursor-pointer transition-all border-slate-800 bg-slate-900/80 hover:bg-slate-800/80",
+                "cursor-pointer transition-all",
+                isDark ? "border-slate-800 bg-slate-900/80 hover:bg-slate-800/80" : "border-slate-200 bg-white/90 hover:bg-slate-50",
                 isSelected && "ring-2 ring-blue-500"
               )}
             >
@@ -129,14 +132,14 @@ const SessionHistory = () => {
                         )}
                         {session.analysisResult?.triageLevel?.replace("-", " ") || "Analyzed"}
                       </span>
-                      <span className="text-xs text-slate-500">
+                      <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>
                         {session.severity}
                       </span>
                     </div>
-                    <p className="text-sm text-slate-300 line-clamp-2">
+                    <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'} line-clamp-2`}>
                       {session.symptomsText}
                     </p>
-                    <div className="flex items-center gap-2 mt-2 text-xs text-slate-500">
+                    <div className={`flex items-center gap-2 mt-2 text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
                       <Calendar className="h-3 w-3" />
                       {formatDate(session.createdAt)}
                     </div>
@@ -157,7 +160,7 @@ const SessionHistory = () => {
                     </Button>
                     <ChevronRight className={cn(
                       "h-5 w-5 transition-colors",
-                      isSelected ? "text-blue-400" : "text-slate-600"
+                      isSelected ? "text-blue-400" : isDark ? "text-slate-600" : "text-slate-400"
                     )} />
                   </div>
                 </div>
@@ -170,34 +173,34 @@ const SessionHistory = () => {
       {/* Session Details */}
       <div className="lg:sticky lg:top-32">
         {selectedSession ? (
-          <Card className="border-slate-800 bg-slate-900/80">
+          <Card className={isDark ? 'border-slate-800 bg-slate-900/80' : 'border-slate-200 bg-white/90'}>
             <CardHeader>
-              <CardTitle className="text-white">Session Details</CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardTitle className={isDark ? 'text-white' : 'text-slate-900'}>Session Details</CardTitle>
+              <CardDescription className={isDark ? 'text-slate-400' : 'text-slate-600'}>
                 {formatDate(selectedSession.createdAt)}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <h4 className="text-sm font-medium text-slate-400 mb-1">Symptoms</h4>
-                <p className="text-slate-200">{selectedSession.symptomsText}</p>
+                <h4 className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'} mb-1`}>Symptoms</h4>
+                <p className={isDark ? 'text-slate-200' : 'text-slate-800'}>{selectedSession.symptomsText}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h4 className="text-sm font-medium text-slate-400 mb-1">Severity</h4>
-                  <p className="text-slate-200 capitalize">{selectedSession.severity}</p>
+                  <h4 className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'} mb-1`}>Severity</h4>
+                  <p className={`${isDark ? 'text-slate-200' : 'text-slate-800'} capitalize`}>{selectedSession.severity}</p>
                 </div>
                 <div>
-                  <h4 className="text-sm font-medium text-slate-400 mb-1">Age</h4>
-                  <p className="text-slate-200">{selectedSession.age}</p>
+                  <h4 className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'} mb-1`}>Age</h4>
+                  <p className={isDark ? 'text-slate-200' : 'text-slate-800'}>{selectedSession.age}</p>
                 </div>
               </div>
 
               {selectedSession.analysisResult && (
                 <>
                   <div>
-                    <h4 className="text-sm font-medium text-slate-400 mb-1">Triage Level</h4>
+                    <h4 className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'} mb-1`}>Triage Level</h4>
                     <span className={cn(
                       "inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium",
                       triageColors[selectedSession.analysisResult.triageLevel]?.bg,
@@ -209,15 +212,15 @@ const SessionHistory = () => {
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-medium text-slate-400 mb-1">AI Assessment</h4>
-                    <p className="text-slate-200 text-sm">
+                    <h4 className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'} mb-1`}>AI Assessment</h4>
+                    <p className={`${isDark ? 'text-slate-200' : 'text-slate-800'} text-sm`}>
                       {selectedSession.analysisResult.triageReason}
                     </p>
                   </div>
 
                   {selectedSession.analysisResult.recommendations?.doctorSpecialization && (
                     <div>
-                      <h4 className="text-sm font-medium text-slate-400 mb-1">Recommended Specialist</h4>
+                      <h4 className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'} mb-1`}>Recommended Specialist</h4>
                       <p className="text-blue-400 font-medium">
                         {selectedSession.analysisResult.recommendations.doctorSpecialization}
                       </p>
@@ -228,11 +231,11 @@ const SessionHistory = () => {
             </CardContent>
           </Card>
         ) : (
-          <Card className="border-slate-800 bg-slate-900/80">
+          <Card className={isDark ? 'border-slate-800 bg-slate-900/80' : 'border-slate-200 bg-white/90'}>
             <CardContent className="flex flex-col items-center justify-center py-20 text-center">
-              <Clock className="h-12 w-12 text-slate-600 mb-4" />
-              <h3 className="text-lg font-medium text-white">Select a Session</h3>
-              <p className="text-slate-400 mt-2">
+              <Clock className={`h-12 w-12 ${isDark ? 'text-slate-600' : 'text-slate-400'} mb-4`} />
+              <h3 className={`text-lg font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>Select a Session</h3>
+              <p className={`${isDark ? 'text-slate-400' : 'text-slate-600'} mt-2`}>
                 Click on a session to view its details
               </p>
             </CardContent>

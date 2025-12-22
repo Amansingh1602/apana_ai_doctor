@@ -71,6 +71,13 @@ export const authApi = {
     });
   },
 
+  changePassword: async (data) => {
+    return apiCall('/auth/change-password', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
   isAuthenticated: () => {
     return !!getToken();
   },
@@ -116,8 +123,195 @@ export const symptomsApi = {
   },
 };
 
+// ==================== UPLOAD API ====================
+
+export const uploadApi = {
+  uploadReport: async (file) => {
+    const formData = new FormData();
+    formData.append('report', file);
+
+    const token = getToken();
+    const response = await fetch(`${API_URL}/files/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Upload failed');
+    }
+    return data;
+  },
+
+  getReports: async () => {
+    return apiCall('/files/reports');
+  },
+
+  downloadReport: async (id, filename) => {
+    const token = getToken();
+    const response = await fetch(`${API_URL}/files/reports/${id}/download`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Download failed');
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  },
+
+  downloadHistoryPDF: async () => {
+    const token = getToken();
+    const response = await fetch(`${API_URL}/files/history-pdf`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Download failed');
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'health-history.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  },
+
+  analyze: async (id) => {
+    return apiCall(`/files/analyze/${id}`, { method: 'POST' });
+  }
+};
+
+// ==================== NOTIFICATION API ====================
+
+export const notificationApi = {
+  getAll: async () => {
+    return apiCall('/notifications');
+  },
+
+  markRead: async (id) => {
+    return apiCall(`/notifications/${id}/read`, { method: 'PUT' });
+  },
+
+  markAllRead: async () => {
+    return apiCall('/notifications/read-all', { method: 'PUT' });
+  },
+
+  delete: async (id) => {
+    return apiCall(`/notifications/${id}`, { method: 'DELETE' });
+  },
+
+  deleteAll: async () => {
+    return apiCall('/notifications', { method: 'DELETE' });
+  },
+
+  sendTestEmail: async () => {
+    return apiCall('/notifications/test-email', { method: 'POST' });
+  }
+};
+
+// ==================== SCHEDULED NOTIFICATION API ====================
+
+export const scheduledNotificationApi = {
+  getAll: async () => {
+    return apiCall('/scheduled-notifications');
+  },
+
+  create: async (data) => {
+    return apiCall('/scheduled-notifications', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  delete: async (id) => {
+    return apiCall(`/scheduled-notifications/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  toggle: async (id) => {
+    return apiCall(`/scheduled-notifications/${id}/toggle`, {
+      method: 'PUT'
+    });
+  }
+};
+
+// ==================== ANALYTICS API ====================
+
+export const analyticsApi = {
+  getDashboard: async () => {
+    return apiCall('/analytics/dashboard');
+  }
+};
+
+// ==================== REPORTS API ====================
+
+export const reportsApi = {
+  downloadStream: async (sessionId) => {
+    const token = getToken();
+    const response = await fetch(`${API_URL}/reports/generate/${sessionId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!response.ok) throw new Error("Failed to download report");
+    
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Health_Report_${sessionId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+};
+
+// ==================== DOCTORS API ====================
+
+export const doctorApi = {
+  search: async (city, specialty) => {
+    return apiCall(`/doctors/search?city=${encodeURIComponent(city)}&specialty=${encodeURIComponent(specialty)}`);
+  }
+};
+
+// ==================== CHAT API ====================
+
+export const chatApi = {
+  send: async (message, history) => {
+    return apiCall('/chat', {
+      method: 'POST',
+      body: JSON.stringify({ message, history })
+    });
+  }
+};
+
 export default {
   auth: authApi,
   consent: consentApi,
   symptoms: symptomsApi,
+  upload: uploadApi,
+  notifications: notificationApi,
+  scheduledNotifications: scheduledNotificationApi,
+  analytics: analyticsApi,
+  reports: reportsApi,
+  doctors: doctorApi,
+  chat: chatApi
 };
