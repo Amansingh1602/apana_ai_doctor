@@ -99,6 +99,29 @@ router.get('/reports', authMiddleware, async (req, res) => {
     }
 });
 
+// Delete a report
+router.delete('/reports/:id', authMiddleware, async (req, res) => {
+    try {
+        const report = await MedicalReport.findOne({ _id: req.params.id, user: req.user._id });
+        if (!report) {
+            return res.status(404).json({ error: 'Report not found' });
+        }
+
+        // Delete the file from disk
+        if (fs.existsSync(report.path)) {
+            fs.unlinkSync(report.path);
+        }
+
+        // Delete from database
+        await MedicalReport.findByIdAndDelete(req.params.id);
+
+        res.json({ message: 'Report deleted successfully' });
+    } catch (error) {
+        console.error('Delete error:', error);
+        res.status(500).json({ error: 'Error deleting report' });
+    }
+});
+
 // Download a report
 router.get('/reports/:id/download', authMiddleware, async (req, res) => {
     try {

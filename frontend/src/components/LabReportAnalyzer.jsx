@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { uploadApi } from '../lib/api';
-import { Upload, FileText, Loader2, CheckCircle, Info } from 'lucide-react';
+import { Upload, FileText, Loader2, CheckCircle, Info, Trash2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useTheme } from '../hooks/useTheme';
 import { toast } from 'sonner';
@@ -171,10 +171,29 @@ const LabReportAnalyzer = () => {
                </ul>
             </div>
             
-            <div className="text-center pt-4">
+            <div className="text-center pt-4 flex justify-center gap-3">
                <Button variant="outline" onClick={() => { setFile(null); setAnalysis(null); setReport(null); }}>
                   Analyze Another Report
                </Button>
+               {report && (
+                 <Button 
+                   variant="destructive" 
+                   onClick={async () => {
+                     try {
+                       await uploadApi.deleteReport(report._id);
+                       toast.success('Report deleted successfully');
+                       setFile(null); 
+                       setAnalysis(null); 
+                       setReport(null);
+                     } catch (error) {
+                       toast.error('Failed to delete report');
+                     }
+                   }}
+                 >
+                   <Trash2 className="h-4 w-4 mr-2" />
+                   Delete Report
+                 </Button>
+               )}
             </div>
         </div>
       )}

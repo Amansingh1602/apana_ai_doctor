@@ -150,6 +150,12 @@ export const uploadApi = {
     return apiCall('/files/reports');
   },
 
+  deleteReport: async (id) => {
+    return apiCall(`/files/reports/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
   downloadReport: async (id, filename) => {
     const token = getToken();
     const response = await fetch(`${API_URL}/files/reports/${id}/download`, {
